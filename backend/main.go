@@ -2,13 +2,17 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/lidchen/neuron_deck/backend/llmstream"
 )
+
+var requiredEnvKeys = []string{"DEEPSEEK_API_KEY", "DB_DSN", "URL"}
 
 func main() {
 	initEnv()
@@ -30,12 +34,23 @@ func main() {
 }
 
 func initEnv() {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		log.Fatal("Error loading env file")
+	if err := initEnvFromPath("../.env"); err != nil {
+		log.Fatal(err)
 		return
 	}
-	_ = os.Getenv("DEEPSEEK_API_KEY")
-	_ = os.Getenv("DB_DSN")
-	_ = os.Getenv("URL")
+}
+
+func initEnvFromPath(path string) error {
+	if err := godotenv.Load(path); err != nil {
+		return fmt.Errorf("load env file: %w", err)
+	}
+
+	for _, key := range requiredEnvKeys {
+		val, ok := os.LookupEnv(key)
+		if !ok || strings.TrimSpace(val) == "" {
+			return fmt.Errorf("missing required env var: %s", key)
+		}
+	}
+
+	return nil
 }
