@@ -3,21 +3,17 @@ package main
 import (
 	"database/sql"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/joho/godotenv"
-)
-
-var (
-	TOKEN  string
-	DB_DSN string
-	url    string = "https://api.deepseek.com/chat/completions"
-	method string = "POST"
+	"github.com/lidchen/neuron_deck/backend/llmstream"
 )
 
 func main() {
 	initEnv()
-	db, err := sql.Open("postgres", DB_DSN)
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
+	db, err := sql.Open("postgres", os.Getenv("DB_DSN"))
 	if err != nil {
 		log.Fatalf("open db: %v", err)
 		return
@@ -28,15 +24,18 @@ func main() {
 		log.Fatalf("ping db: %v", err)
 		return
 	}
-
+	c := llmstream.NewConversation("your are a helpful assistant")
+	client := &http.Client{}
+	c.RunInteractiveChat(client)
 }
 
 func initEnv() {
-	err := godotenv.Load(".env")
+	err := godotenv.Load("../.env")
 	if err != nil {
 		log.Fatal("Error loading env file")
 		return
 	}
-	TOKEN = os.Getenv("DEEPSEEK_API_KEY")
-	DB_DSN = os.Getenv("DB_DSN")
+	_ = os.Getenv("DEEPSEEK_API_KEY")
+	_ = os.Getenv("DB_DSN")
+	_ = os.Getenv("URL")
 }
