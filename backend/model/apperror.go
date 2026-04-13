@@ -1,4 +1,4 @@
-package main
+package model
 
 /*
 | Case                 | Status | Code                |

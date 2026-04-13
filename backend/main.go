@@ -4,12 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strings"
 
 	"github.com/joho/godotenv"
-	"github.com/lidchen/neuron_deck/backend/llmstream"
+	"github.com/lidchen/neuron_deck/backend/cli"
 )
 
 var requiredEnvKeys = []string{"DEEPSEEK_API_KEY", "DB_DSN", "URL"}
@@ -28,9 +27,10 @@ func main() {
 		log.Fatalf("ping db: %v", err)
 		return
 	}
-	c := llmstream.NewConversation("your are a helpful assistant")
-	client := &http.Client{}
-	c.RunInteractiveChat(client)
+	// c := llmstream.NewConversation("your are a helpful assistant")
+	// client := &http.Client{}
+	// c.RunInteractiveChat(client)
+	cli.RunCliApp(db)
 }
 
 func initEnv() {

@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"database/sql"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	. "github.com/lidchen/neuron_deck/backend/model"
 )
 
 func mapPgError(err error, conflictCode, conflictMessage string) *AppError {
@@ -23,14 +24,15 @@ func mapPgError(err error, conflictCode, conflictMessage string) *AppError {
 	return ErrInternal(err)
 }
 
-func CreateUser(db *sql.DB, username, passwordHash string) *AppError {
-	_, err := db.Exec(
-		"INSERT INTO users (username, password_hash) VALUES ($1, $2)", username, passwordHash,
-	)
+func CreateUser(db *sql.DB, username, passwordHash string) (*User, *AppError) {
+	var u User
+	err := db.QueryRow(
+		"INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, password_hash, created_at", username, passwordHash,
+	).Scan(&u.Id, &u.Username, &u.Password, &u.CreatedAt)
 	if err != nil {
-		return mapPgError(err, "USER_ALREADY_EXISTS", "user already exists")
+		return nil, mapPgError(err, "USER_ALREADY_EXISTS", "user already exists")
 	}
-	return nil
+	return &u, nil
 }
 
 func GetUserByID(db *sql.DB, id int) (*User, *AppError) {
@@ -115,14 +117,15 @@ func DeleteUser(db *sql.DB, id int) *AppError {
 	return nil
 }
 
-func CreateDeck(db *sql.DB, userID int, name string) *AppError {
-	_, err := db.Exec(
-		"INSERT INTO decks (user_id, name) VALUES ($1, $2)", userID, name,
-	)
+func CreateDeck(db *sql.DB, userID int, name string) (*Deck, *AppError) {
+	var d Deck
+	err := db.QueryRow(
+		"INSERT INTO decks (user_id, name) VALUES ($1, $2) RETURNING *", userID, name,
+	).Scan(&d.Id, &d.UserId, &d.Name, &d.CreatedAt, &d.UpdatedAt)
 	if err != nil {
-		return mapPgError(err, "DECK_ALREADY_EXISTS", "deck already exists")
+		return nil, mapPgError(err, "DECK_ALREADY_EXISTS", "deck already exists")
 	}
-	return nil
+	return &d, nil
 }
 
 func GetDeckByDeckName(db *sql.DB, userID int, name string) (*Deck, *AppError) {
