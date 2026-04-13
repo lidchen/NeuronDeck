@@ -7,7 +7,7 @@ import (
 )
 
 // ---- Dispatch ----
-func dispatch(input string) {
+func (a *CliApp) dispatch(input string) {
 	input = strings.TrimSpace(input)
 	if input == "" {
 		return
@@ -23,11 +23,15 @@ func dispatch(input string) {
 
 	switch cmd {
 	case "create":
-		handleCreate(args)
+		a.handleCreate(args)
 	case "show":
-		handleShow(args)
+		a.handleShow(args)
 	case "delete":
-		handleDelete(args)
+		a.handleDelete(args)
+	case "login":
+		a.handleLogin(args)
+	case "deck":
+		a.handleOpenDeck(args)
 	case "help":
 		printHelp()
 	case "exit", "quit":

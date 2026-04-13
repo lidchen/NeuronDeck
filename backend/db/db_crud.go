@@ -65,7 +65,7 @@ func GetUserByUsername(db *sql.DB, username string) (*User, *AppError) {
 	return &u, nil
 }
 
-func ListUsers(db *sql.DB) (*[]User, *AppError) {
+func ListUsers(db *sql.DB) ([]User, *AppError) {
 	rows, err := db.Query("SELECT id, username, password_hash, created_at FROM users ORDER BY id")
 	if err != nil {
 		return nil, ErrInternal(err)
@@ -84,7 +84,7 @@ func ListUsers(db *sql.DB) (*[]User, *AppError) {
 		return nil, ErrInternal(err)
 	}
 
-	return &users, nil
+	return users, nil
 }
 
 func UpdateUserPassword(db *sql.DB, id int, passwordHash string) *AppError {
@@ -158,7 +158,7 @@ func GetDeckByDeckId(db *sql.DB, userID int, id int) (*Deck, *AppError) {
 	return &d, nil
 }
 
-func ListDecksByUserID(db *sql.DB, userID int) (*[]Deck, *AppError) {
+func ListDecksByUserID(db *sql.DB, userID int) ([]Deck, *AppError) {
 	rows, err := db.Query(
 		"SELECT id, user_id, name, created_at, updated_at FROM decks WHERE user_id=$1 ORDER BY id",
 		userID,
@@ -180,7 +180,7 @@ func ListDecksByUserID(db *sql.DB, userID int) (*[]Deck, *AppError) {
 		return nil, ErrInternal(err)
 	}
 
-	return &decks, nil
+	return decks, nil
 }
 
 func UpdateDeckName(db *sql.DB, userID, id int, name string) *AppError {
@@ -251,7 +251,7 @@ func GetCardByID(db *sql.DB, deckID, id int) (*Card, *AppError) {
 	return &c, nil
 }
 
-func GetCards(db *sql.DB, deckID int) (*[]Card, *AppError) {
+func GetCards(db *sql.DB, deckID int) ([]Card, *AppError) {
 	rows, err := db.Query(
 		"SELECT id, deck_id, front, back, source_text, created_by_ai, created_at, updated_at FROM cards WHERE deck_id=$1 ORDER BY id",
 		deckID,
@@ -279,7 +279,7 @@ func GetCards(db *sql.DB, deckID int) (*[]Card, *AppError) {
 	if err := rows.Err(); err != nil {
 		return nil, ErrInternal(err)
 	}
-	return &cards, nil
+	return cards, nil
 }
 
 func UpdateCard(db *sql.DB, deckID, id int, front, back string, sourceText *string, createdByAI bool) *AppError {
@@ -379,7 +379,7 @@ func DeleteCardSrs(db *sql.DB, cardID int) *AppError {
 	return nil
 }
 
-func GetDueCardSrs(db *sql.DB, before time.Time) (*[]CardSrs, *AppError) {
+func GetDueCardSrs(db *sql.DB, before time.Time) ([]CardSrs, *AppError) {
 	rows, err := db.Query(
 		"SELECT card_id, interval, ease_factor, repetitions, next_review_at, last_reviewed_at FROM card_srs WHERE next_review_at <= $1 ORDER BY next_review_at",
 		before,
@@ -405,7 +405,7 @@ func GetDueCardSrs(db *sql.DB, before time.Time) (*[]CardSrs, *AppError) {
 		return nil, ErrInternal(err)
 	}
 
-	return &items, nil
+	return items, nil
 }
 
 func PingDB(db *sql.DB) *AppError {

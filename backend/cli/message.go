@@ -16,3 +16,10 @@ var delete_usage string = `
 delete card <id>             Delete a card by ID
 delete deck <id>             Delete a deck by ID
 `
+
+var other_usage string = `
+login <username>             User login
+deck <deckname>              Open deck
+help                         Show this help message
+exit                         Quit the program
+`

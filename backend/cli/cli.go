@@ -4,19 +4,23 @@ import (
 	"bufio"
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
-	. "github.com/lidchen/neuron_deck/backend/db"
+	"github.com/lidchen/neuron_deck/backend/model"
 )
 
-// Default val for test
-var username = "test"
-var passwd = "testpasswd"
-var deckname = "test"
+type CliApp struct {
+	db   *sql.DB
+	deck *model.Deck
+	user *model.User
+}
 
-func RunCliApp(db *sql.DB) {
+func NewCliApp(db *sql.DB) *CliApp {
+	return &CliApp{db: db}
+}
+
+func RunCliApp(a *CliApp) {
 	fmt.Println("🃏 Flashcard CLI — type \"help\" or \"exit\"")
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -25,9 +29,40 @@ func RunCliApp(db *sql.DB) {
 		if !scanner.Scan() {
 			break
 		}
-		dispatch(scanner.Text())
+		a.dispatch(scanner.Text())
 	}
 }
+
+func printWithWrap(s string) {
+	l := len(s) + 4
+	char := "="
+	wrap := strings.Repeat(char, l)
+	fmt.Println(wrap)
+	fmt.Printf("| %s |\n", s)
+	fmt.Println(wrap)
+}
+
+func printHelp() {
+	fmt.Printf("Commands:\n%s\n%s\n%s\n%s\n", create_usage, show_usage, delete_usage, other_usage)
+}
+
+func readLineWithPrompt(s string) string {
+	fmt.Print(s)
+	return readLine()
+}
+
+func readLine() string {
+	reader := bufio.NewReader(os.Stdin)
+	line, _ := reader.ReadString('\n')
+	return strings.TrimRight(line, "\r\n")
+}
+
+/*
+
+// Default val for test
+var username = "test"
+var passwd = "testpasswd"
+var deckname = "test"
 
 func testCilApp(db *sql.DB) {
 	if username == "" || passwd == "" {
@@ -82,97 +117,4 @@ func testCilApp(db *sql.DB) {
 		fmt.Println(c)
 	}
 }
-
-func printWithWrap(s string) {
-	l := len(s) + 4
-	char := "="
-	wrap := strings.Repeat(char, l)
-	fmt.Println(wrap)
-	fmt.Printf("| %s |\n", s)
-	fmt.Println(wrap)
-}
-
-func handleShow(args []string) {
-
-}
-
-func handleDelete(args []string) {
-
-}
-
-func printHelp() {
-	fmt.Printf("Commands:\n%s\n%s\n%s\n", create_usage, show_usage, delete_usage)
-	fmt.Println(`
-help                         Show this help message
-exit                         Quit the program
-	`)
-}
-
-// ---- Dispatch ----
-func dispatch(input string) {
-	input = strings.TrimSpace(input)
-	if input == "" {
-		return
-	}
-
-	// Simple tokenizer: respects quoted strings like "hello world"
-	tokens := tokenize(input)
-	if len(tokens) == 0 {
-		return
-	}
-
-	cmd, args := tokens[0], tokens[1:]
-
-	switch cmd {
-	case "create":
-		handleCreate(args)
-	case "show":
-		handleShow(args)
-	case "delete":
-		handleDelete(args)
-	case "help":
-		printHelp()
-	case "exit", "quit":
-		fmt.Println("Goodbye!")
-		os.Exit(0)
-	default:
-		fmt.Printf("Unknown command: %q. Type \"help\" for usage.\n", cmd)
-	}
-}
-
-func readLineWithPrompt(s string) string {
-	fmt.Print(s)
-	return readLine()
-}
-
-func readLine() string {
-	reader := bufio.NewReader(os.Stdin)
-	line, _ := reader.ReadString('\n')
-	return strings.TrimRight(line, "\r\n")
-}
-
-// tokenize splits by whitespace but keeps quoted strings together.
-// e.g. `create card "what is Go" "a language"` → ["create","card","what is Go","a language"]
-func tokenize(s string) []string {
-	var tokens []string
-	var current strings.Builder
-	inQuote := false
-
-	for _, ch := range s {
-		switch {
-		case ch == '"':
-			inQuote = !inQuote
-		case ch == ' ' && !inQuote:
-			if current.Len() > 0 {
-				tokens = append(tokens, current.String())
-				current.Reset()
-			}
-		default:
-			current.WriteRune(ch)
-		}
-	}
-	if current.Len() > 0 {
-		tokens = append(tokens, current.String())
-	}
-	return tokens
-}
+*/

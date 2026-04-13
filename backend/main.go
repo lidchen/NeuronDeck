@@ -11,7 +11,7 @@ import (
 	"github.com/lidchen/neuron_deck/backend/cli"
 )
 
-var requiredEnvKeys = []string{"DEEPSEEK_API_KEY", "DB_DSN", "URL"}
+var requiredEnvKeys = []string{"DEEPSEEK_API_KEY", "DB_DSN", "URL", "DEBUG_MODE"}
 
 func main() {
 	initEnv()
@@ -30,7 +30,8 @@ func main() {
 	// c := llmstream.NewConversation("your are a helpful assistant")
 	// client := &http.Client{}
 	// c.RunInteractiveChat(client)
-	cli.RunCliApp(db)
+	cliapp := cli.NewCliApp(db)
+	cli.RunCliApp(cliapp)
 }
 
 func initEnv() {
