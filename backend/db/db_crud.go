@@ -430,6 +430,32 @@ func GetDueCardSrs(db *sql.DB, before time.Time) ([]CardSrs, *AppError) {
 	return items, nil
 }
 
+func GetCardToReview(db *sql.DB, before time.Time) (*Card, *AppError) {
+	// Get one card with oldest next_review_at before time
+	// if don't exist return nil, nil
+	query :=
+		`
+SELECT cards.id, cards.deck_id, cards.front, cards.back, 
+			cards.source_text, cards.created_at, cards.updated_at,
+			card_srs.next_review_at
+FROM cards 
+LEFT JOIN card_srs ON cards.id = card_srs.card_id 
+WHERE next_review_at <= $1 
+ORDER BY next_review_at
+LIMIT 1
+`
+	var c Card
+	err := db.QueryRow(query, before).Scan(&c.Id, &c.DeckId, &c.Front, &c.Back, &c.SourceText, &c.CreatedAt, &c.CreatedAt, &c.UpdatedAt)
+
+	if err == sql.ErrNoRows {
+		return nil, nil // expected: nothing to review
+	}
+	if err != nil {
+		return nil, ErrInternal(err)
+	}
+	return &c, nil
+}
+
 func PingDB(db *sql.DB) *AppError {
 	if err := db.Ping(); err != nil {
 		return ErrInternal(fmt.Errorf("database ping failed: %w", err))
