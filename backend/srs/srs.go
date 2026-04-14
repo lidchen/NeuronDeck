@@ -9,13 +9,16 @@ import (
 	"github.com/lidchen/neuron_deck/backend/model"
 )
 
-var learning_steps = []float32{0.1667, 1.0}
+// TODO: implement "AGAIN, HARD, NORMAL, EASY" logic
+// dont use learning_steps start with 0
+
+var learning_steps = []float32{0, 0.1667, 1.0}
 var graduating_interval float32 = 24.0
 
 func Review(c *model.CardSrs, q int) *model.AppError {
 	var now time.Time = time.Now()
 
-	if c.Interval == 0 {
+	if c.Repetitions == 0 {
 		// LEARNING PAHSE
 		if err := learningPhase(q, c); err != nil {
 			return err

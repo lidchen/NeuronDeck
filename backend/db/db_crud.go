@@ -368,6 +368,25 @@ func GetCardSrs(db *sql.DB, cardID int) (*CardSrs, *AppError) {
 	return &c, nil
 }
 
+func UpdateCardSrs(db *sql.DB, cSrs *CardSrs) *AppError {
+	res, err := db.Exec(
+		"UPDATE card_srs SET interval=$1, ease_factor=$2, repetitions=$3, next_review_at=$4, last_reviewed_at=$5 WHERE card_id=$6",
+		cSrs.Interval, cSrs.EaseFactor, cSrs.Repetitions, cSrs.NextReviewAt, cSrs.LastReviewAt, cSrs.CardId,
+	)
+	if err != nil {
+		return ErrInternal(err)
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return ErrInternal(err)
+	}
+	if affected == 0 {
+		return ErrNotFound(model.CodeNotFound, "card srs not found")
+	}
+	return nil
+}
+
+/*
 func UpdateCardSrs(db *sql.DB, cardID, interval, repetitions int, easeFactor float64, nextReviewAt time.Time, lastReviewAt *time.Time) *AppError {
 	res, err := db.Exec(
 		"UPDATE card_srs SET interval=$1, ease_factor=$2, repetitions=$3, next_review_at=$4, last_reviewed_at=$5 WHERE card_id=$6",
@@ -385,6 +404,7 @@ func UpdateCardSrs(db *sql.DB, cardID, interval, repetitions int, easeFactor flo
 	}
 	return nil
 }
+*/
 
 func DeleteCardSrs(db *sql.DB, cardID int) *AppError {
 	res, err := db.Exec("DELETE FROM card_srs WHERE card_id=$1", cardID)

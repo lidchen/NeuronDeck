@@ -2,7 +2,7 @@ package cli
 
 import (
 	"fmt"
-	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -28,33 +28,44 @@ func (a *CliApp) handleReview(args []string) {
 	// show due card, handle input(q), update cardsrs
 	// type exit / quit to exit review mode
 	for {
-		c, err := db.GetCardToReview(a.db, time.Now())
+		done, err := reviewNextCard(a)
 		if err != nil {
-			log.Fatal(err.Message)
+			fmt.Fprintf(os.Stderr, "error: %s\n", err.Message)
+		}
+		if done {
 			return
-		}
-		if c == nil {
-			fmt.Println("no card to review")
-			return
-		}
-		should_exit, q, err := a.cardReviewInterface(c)
-		if should_exit {
-			break
-		}
-		if err != nil {
-			log.Fatal(err.Message)
-			return
-		}
-		c_srs, err := db.GetCardSrs(a.db, c.Id)
-		if err != nil {
-			log.Fatal(err.Message)
-			return
-		}
-		err = srs.Review(c_srs, *q)
-		if err != nil {
-			log.Fatal(err.Message)
 		}
 	}
+}
+
+func reviewNextCard(a *CliApp) (done bool, apperr *model.AppError) {
+	c, err := db.GetCardToReview(a.db, time.Now())
+	if err != nil {
+		return false, err
+	}
+	if c == nil {
+		fmt.Println("no card to review")
+		return true, nil
+	}
+
+	should_exit, q, err := a.cardReviewInterface(c)
+	if should_exit || err != nil {
+		return true, err
+	}
+
+	cSrs, err := db.GetCardSrs(a.db, c.Id)
+	if err != nil {
+		return true, err
+	}
+	err = srs.Review(cSrs, *q)
+	if err != nil {
+		return true, err
+	}
+	err = db.UpdateCardSrs(a.db, cSrs)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %s\n", err.Message)
+	}
+	return false, nil
 }
 
 func (a *CliApp) cardReviewInterface(c *model.Card) (bool, *int, *model.AppError) {
@@ -73,19 +84,16 @@ func (a *CliApp) cardReviewInterface(c *model.Card) (bool, *int, *model.AppError
 	// Handle input, get q
 
 	for {
-		line := readLineWithPrompt("rank from 1-5:")
+		line := readLineWithPrompt("rank from 1-5: ")
 		if line == "exit" || line == "quit" {
 			should_exit = true
 			return should_exit, nil, nil
 		}
-		q, err := strconv.Atoi(line)
-		if err != nil {
-			return should_exit, nil, model.ErrInternal(err)
+		q, convErr := strconv.Atoi(line)
+		if convErr != nil || q < 1 || q > 5 {
+			fmt.Println("please enter number between 1 and 5")
+			continue
 		}
-		if q < 1 || q > 5 {
-			fmt.Println("q should be 1-5")
-		} else {
-			return should_exit, &q, nil
-		}
+		return should_exit, &q, nil
 	}
 }
