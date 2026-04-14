@@ -267,7 +267,7 @@ func GetCardByID(db *sql.DB, deckID, id int) (*Card, *AppError) {
 		return nil, ErrInternal(err)
 	}
 	if sourceText.Valid {
-		c.SourceText = sourceText.String
+		c.SourceText = &sourceText.String
 	}
 
 	return &c, nil
@@ -294,7 +294,7 @@ func GetCards(db *sql.DB, deckID int) ([]Card, *AppError) {
 			return nil, ErrInternal(err)
 		}
 		if sourceText.Valid {
-			c.SourceText = sourceText.String
+			c.SourceText = &sourceText.String
 		}
 		cards = append(cards, c)
 	}
@@ -435,9 +435,8 @@ func GetCardToReview(db *sql.DB, before time.Time) (*Card, *AppError) {
 	// if don't exist return nil, nil
 	query :=
 		`
-SELECT cards.id, cards.deck_id, cards.front, cards.back, 
-			cards.source_text, cards.created_at, cards.updated_at,
-			card_srs.next_review_at
+SELECT cards.id, cards.deck_id, cards.front, cards.back,
+			cards.source_text, cards.created_at, cards.updated_at
 FROM cards 
 LEFT JOIN card_srs ON cards.id = card_srs.card_id 
 WHERE next_review_at <= $1 
@@ -445,13 +444,17 @@ ORDER BY next_review_at
 LIMIT 1
 `
 	var c Card
-	err := db.QueryRow(query, before).Scan(&c.Id, &c.DeckId, &c.Front, &c.Back, &c.SourceText, &c.CreatedAt, &c.CreatedAt, &c.UpdatedAt)
+	var sourceText sql.NullString
+	err := db.QueryRow(query, before).Scan(&c.Id, &c.DeckId, &c.Front, &c.Back, &sourceText, &c.CreatedAt, &c.UpdatedAt)
 
 	if err == sql.ErrNoRows {
 		return nil, nil // expected: nothing to review
 	}
 	if err != nil {
 		return nil, ErrInternal(err)
+	}
+	if sourceText.Valid {
+		c.SourceText = &sourceText.String
 	}
 	return &c, nil
 }

@@ -24,7 +24,7 @@ type Card struct {
 	DeckId      int
 	Front       string
 	Back        string
-	SourceText  string
+	SourceText  *string
 	CreatedByAi bool
 	CreatedAt   time.Time
 	UpdatedAt   time.Time

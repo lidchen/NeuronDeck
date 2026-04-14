@@ -71,8 +71,7 @@ func (a *CliApp) handleUpdateCard(args []string) {
 		return
 	}
 
-	sourceText := card.SourceText
-	errApp = db.UpdateCard(a.db, a.deck.Id, cardID, front, back, &sourceText, card.CreatedByAi)
+	errApp = db.UpdateCard(a.db, a.deck.Id, cardID, front, back, card.SourceText, card.CreatedByAi)
 	if errApp != nil {
 		if errApp.Code == model.CodeNotFound {
 			fmt.Println("card not found")
