@@ -32,7 +32,7 @@ type Card struct {
 
 type CardSrs struct {
 	CardId       int
-	Interval     int
+	Interval     float32
 	EaseFactor   float32
 	Repetitions  int
 	NextReviewAt time.Time
