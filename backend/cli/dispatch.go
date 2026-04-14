@@ -32,8 +32,10 @@ func (a *CliApp) dispatch(input string) {
 		a.handleDelete(args)
 	case "login":
 		a.handleLogin(args)
-	case "deck":
+	case "opendeck":
 		a.handleOpenDeck(args)
+	case "review":
+		a.handleReview(args)
 	case "help":
 		printHelp()
 	case "exit", "quit":

@@ -24,11 +24,10 @@ func (a *CliApp) handleShowCards(args []string) {
 }
 
 func (a *CliApp) handleShowDecks(args []string) {
-	if err := a.validateUser(); err != nil {
-		fmt.Println(err)
+	if a.user == nil {
+		fmt.Println(ErrNoLogin.Error())
 		return
 	}
-
 	decks, err := db.ListDecksByUserID(a.db, a.user.Id)
 	if err != nil {
 		log.Fatal(err)

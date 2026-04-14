@@ -16,12 +16,12 @@ func (a *CliApp) handleUpdateCard(args []string) {
 	// 1 arg: expect this as id, prompt for updated value
 	// 2 args: error
 	// 3 / 3+ args: expect <id> <front> <back> format, ignore others
-	if err := a.validateUser(); err != nil {
-		fmt.Println(err)
+	if a.user == nil {
+		fmt.Println(ErrNoLogin.Error())
 		return
 	}
-	if err := a.validateDeck(); err != nil {
-		fmt.Println(err)
+	if a.deck == nil {
+		fmt.Println(ErrNoDeckOpen.Error())
 		return
 	}
 
@@ -89,8 +89,8 @@ func (a *CliApp) handleUpdateDeck(args []string) {
 	// 0 arg: prompt for id, updated deckname
 	// 1 arg: prompt for updated deckname
 	// 2 / 2+ args: expect id, updated deckname, ignore others
-	if err := a.validateUser(); err != nil {
-		fmt.Println(err)
+	if a.user == nil {
+		fmt.Println(ErrNoLogin.Error())
 		return
 	}
 
@@ -161,57 +161,12 @@ func (a *CliApp) handleUpdateUser(args []string) {
 
 	// args not begin with me:
 	// validate: prompt for currentpassword, check if validate
-	// 0 arg: prompt for id, do validate, prompt for updated value
-	// 1 arg: expect id, validate prompt for update value
-	// 2 args: error
-	// 3 / 3+ args: expect id, updated_value, do validate
 	if len(args) == 0 {
 		args = []string{"me"}
 	}
 
 	if args[0] == "me" {
-		if err := a.validateUser(); err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		var newUsername, newPassword string
-		switch len(args) {
-		case 1:
-			newUsername = readLineWithPrompt("username (_ keep): ")
-			newPassword = readLineWithPrompt("password (_ keep): ")
-		case 2:
-			newUsername = args[1]
-			newPassword = readLineWithPrompt("password (_ keep): ")
-		default:
-			newUsername = args[1]
-			newPassword = args[2]
-		}
-
-		if newUsername == "_" {
-			newUsername = a.user.Username
-		}
-		if newPassword == "_" {
-			newPassword = a.user.Password
-		}
-		if newUsername == a.user.Username && newPassword == a.user.Password {
-			fmt.Println("No changes")
-			return
-		}
-
-		errApp := db.UpdateUser(a.db, a.user.Id, newUsername, newPassword)
-		if errApp != nil {
-			if errApp.Code == model.CodeUserAlreadyExists {
-				fmt.Println("user already exists")
-				return
-			}
-			log.Fatal(errApp)
-			return
-		}
-
-		a.user.Username = newUsername
-		a.user.Password = newPassword
-		fmt.Println("User Updated")
+		handleUpdateUserMe(a, args)
 		return
 	}
 
@@ -221,8 +176,8 @@ func (a *CliApp) handleUpdateUser(args []string) {
 		return
 	}
 
-	if err := a.validateUser(); err != nil {
-		fmt.Println(err)
+	if a.user == nil {
+		fmt.Println(ErrNoLogin.Error())
 		return
 	}
 	if a.user.Id != userID {
@@ -233,6 +188,51 @@ func (a *CliApp) handleUpdateUser(args []string) {
 	currentPassword := readLineWithPrompt("current password: ")
 	if currentPassword != a.user.Password {
 		fmt.Println("password mismatch")
+		return
+	}
+
+	var newUsername, newPassword string
+	switch len(args) {
+	case 1:
+		newUsername = readLineWithPrompt("username (_ keep): ")
+		newPassword = readLineWithPrompt("password (_ keep): ")
+	case 2:
+		newUsername = args[1]
+		newPassword = readLineWithPrompt("password (_ keep): ")
+	default:
+		newUsername = args[1]
+		newPassword = args[2]
+	}
+
+	if newUsername == "_" {
+		newUsername = a.user.Username
+	}
+	if newPassword == "_" {
+		newPassword = a.user.Password
+	}
+	if newUsername == a.user.Username && newPassword == a.user.Password {
+		fmt.Println("No changes")
+		return
+	}
+
+	errApp := db.UpdateUser(a.db, a.user.Id, newUsername, newPassword)
+	if errApp != nil {
+		if errApp.Code == model.CodeUserAlreadyExists {
+			fmt.Println("user already exists")
+			return
+		}
+		log.Fatal(errApp)
+		return
+	}
+
+	a.user.Username = newUsername
+	a.user.Password = newPassword
+	fmt.Println("User Updated")
+}
+
+func handleUpdateUserMe(a *CliApp, args []string) {
+	if a.user == nil {
+		fmt.Println(ErrNoLogin.Error())
 		return
 	}
 

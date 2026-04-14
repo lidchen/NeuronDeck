@@ -10,12 +10,12 @@ import (
 )
 
 func (a *CliApp) handleDeleteCard(args []string) {
-	if err := a.validateUser(); err != nil {
-		fmt.Println(err)
+	if a.user == nil {
+		fmt.Println(ErrNoLogin.Error())
 		return
 	}
-	if err := a.validateDeck(); err != nil {
-		fmt.Println(err)
+	if a.deck == nil {
+		fmt.Println(ErrNoDeckOpen.Error())
 		return
 	}
 
@@ -46,11 +46,10 @@ func (a *CliApp) handleDeleteCard(args []string) {
 }
 
 func (a *CliApp) handleDeleteDeck(args []string) {
-	if err := a.validateUser(); err != nil {
-		fmt.Println(err)
+	if a.user == nil {
+		fmt.Println(ErrNoLogin.Error())
 		return
 	}
-
 	var deckIDStr string
 	if len(args) == 0 {
 		deckIDStr = readLineWithPrompt("deck id: ")

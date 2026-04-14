@@ -7,16 +7,20 @@ import (
 	"github.com/lidchen/neuron_deck/backend/db"
 )
 
-// TODO: create card sys when create card
 func (a *CliApp) handleCreateCard(args []string) {
 	// no args: prompt for front and back
 	// 1 arg: error
 	// 2 arg: create card
 	// 2+ arg: ignore others
-	if a.deck == nil {
-		fmt.Println("No deck is opened, please open a deck first")
+	if a.user == nil {
+		fmt.Println(ErrNoLogin.Error())
 		return
 	}
+	if a.deck == nil {
+		fmt.Println(ErrNoDeckOpen.Error())
+		return
+	}
+
 	var front, back string
 	if len(args) == 0 {
 		front = readLineWithPrompt("front: ")
@@ -30,14 +34,7 @@ func (a *CliApp) handleCreateCard(args []string) {
 		front = args[0]
 		back = args[1]
 	}
-	if err := a.validateUser(); err != nil {
-		fmt.Println(err)
-		return
-	}
-	if err := a.validateDeck(); err != nil {
-		fmt.Println(err)
-		return
-	}
+
 	err := db.CreateCard(a.db, a.deck.Id, front, back, nil, false)
 	if err != nil {
 		log.Fatal(err)
@@ -50,16 +47,16 @@ func (a *CliApp) handleCreateDeck(args []string) {
 	// no args: prompt for deckname
 	// 1 arg: create deck
 	// 1+ arg: ignore others
+	if a.user == nil {
+		fmt.Println(ErrNoLogin.Error())
+		return
+	}
 	var deckname string
 	if len(args) == 0 {
 		deckname = readLineWithPrompt("deckname: ")
 	}
 	if len(args) >= 1 {
 		deckname = args[0]
-	}
-	if err := a.validateUser(); err != nil {
-		fmt.Println(err)
-		return
 	}
 	newDeck, err := db.CreateDeck(a.db, a.user.Id, deckname)
 	if err != nil {

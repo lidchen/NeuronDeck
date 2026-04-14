@@ -13,10 +13,14 @@ show user                    Show current user
 `
 
 var update_usage string = `
-update card <id> <front|_> <back|_>         Update a card in the open deck
-update deck <id> <name|_>                   Rename one of your decks
-update user me [name|_] [password|_]        Update the current user
-update user <id> [name|_] [password|_]      Update the current user after password check
+update card                  Update a card in the open deck
+  <id> <front|_> <back|_>         					
+update deck                  Rename one of your decks
+  <id> <name|_>                   
+update user me               Update the current user
+  [name|_] [password|_]        
+update user                  Update the user
+  <id> [name|_] [password|_]      
 `
 
 var delete_usage string = `
@@ -26,7 +30,7 @@ delete deck <id>             Delete a deck by ID
 
 var other_usage string = `
 login <username>             User login
-deck <deckname>              Open deck
+opendeck <deckname>          Open deck
 help                         Show this help message
 exit                         Quit the program
 `
