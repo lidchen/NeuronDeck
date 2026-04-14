@@ -3,21 +3,21 @@ package llmstream
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/lidchen/neuron_deck/backend/model"
 )
 
 // TODO:
-// specify language, max cards generated
-func GenerateCard(client *http.Client, message *[]Message) (*model.Card, error) {
-	var c *model.Card
-
+// specify language
+// specify max cards generated
+// custom parser, parse each card once finished
+func GenerateCard(client *http.Client, message *[]Message) (*CardResponse, error) {
+	var c CardResponse
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	payload, err := genStreamJsonPayload(message)
@@ -38,7 +38,17 @@ func GenerateCard(client *http.Client, message *[]Message) (*model.Card, error) 
 		fullResponse.WriteString(chunk.Choices[0].Delta.Content)
 	}
 	fmt.Println()
-	return c, nil
+	decoder := json.NewDecoder(strings.NewReader(fullResponse.String()))
+
+	if err = decoder.Decode(&c); err != nil {
+		return nil, err
+	}
+
+	if c.SourceText, err = GetSourceData(message); err != nil {
+		return nil, err
+	}
+
+	return &c, nil
 }
 
 func (c *ConversationManager) RunInteractiveChat(client *http.Client) {
