@@ -43,7 +43,8 @@ func printWithWrap(s string) {
 }
 
 func printHelp() {
-	fmt.Printf("Commands:\n%s\n%s\n%s\n%s\n", create_usage, show_usage, delete_usage, other_usage)
+	fmt.Printf("Commands:\n%s\n%s\n%s\n%s\n%s\n",
+		create_usage, show_usage, update_usage, delete_usage, other_usage)
 }
 
 func readLineWithPrompt(s string) string {

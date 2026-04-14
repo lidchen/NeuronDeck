@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/lidchen/neuron_deck/backend/db"
+	"github.com/lidchen/neuron_deck/backend/model"
 )
 
 func (a *CliApp) handleDeleteCard(args []string) {
@@ -33,7 +34,7 @@ func (a *CliApp) handleDeleteCard(args []string) {
 
 	errApp := db.DeleteCard(a.db, a.deck.Id, cardID)
 	if errApp != nil {
-		if errApp.Code == "NOT_FOUND" {
+		if errApp.Code == model.CodeNotFound {
 			fmt.Println("card not found")
 			return
 		}
@@ -65,7 +66,7 @@ func (a *CliApp) handleDeleteDeck(args []string) {
 
 	errApp := db.DeleteDeck(a.db, a.user.Id, deckID)
 	if errApp != nil {
-		if errApp.Code == "NOT_FOUND" {
+		if errApp.Code == model.CodeNotFound {
 			fmt.Println("deck not found")
 			return
 		}

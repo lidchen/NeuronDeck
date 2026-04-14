@@ -26,6 +26,8 @@ func (a *CliApp) dispatch(input string) {
 		a.handleCreate(args)
 	case "show":
 		a.handleShow(args)
+	case "update":
+		a.handleUpdate(args)
 	case "delete":
 		a.handleDelete(args)
 	case "login":

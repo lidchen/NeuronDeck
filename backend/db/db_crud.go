@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	"github.com/lidchen/neuron_deck/backend/model"
 	. "github.com/lidchen/neuron_deck/backend/model"
 )
 
-func mapPgError(err error, conflictCode, conflictMessage string) *AppError {
+func mapPgError(err error, conflictCode model.ErrorCode, conflictMessage string) *AppError {
 	if pgErr, ok := err.(*pq.Error); ok {
 		switch pgErr.Code {
 		case "23505":
@@ -18,7 +19,7 @@ func mapPgError(err error, conflictCode, conflictMessage string) *AppError {
 			}
 			return ErrConflict("CONFLICT", conflictMessage)
 		case "23503":
-			return ErrBadRequest("invalid reference id")
+			return ErrBadRequest("INVALID_REFERENCE_ID", conflictMessage)
 		}
 	}
 	return ErrInternal(err)
@@ -30,7 +31,7 @@ func CreateUser(db *sql.DB, username, passwordHash string) (*User, *AppError) {
 		"INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, password_hash, created_at", username, passwordHash,
 	).Scan(&u.Id, &u.Username, &u.Password, &u.CreatedAt)
 	if err != nil {
-		return nil, mapPgError(err, "USER_ALREADY_EXISTS", "user already exists")
+		return nil, ErrConflict(model.CodeUserAlreadyExists, "user already exists")
 	}
 	return &u, nil
 }
@@ -43,7 +44,7 @@ func GetUserByID(db *sql.DB, id int) (*User, *AppError) {
 	err := row.Scan(&u.Id, &u.Username, &u.Password, &u.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound("NOT_FOUND", "user not found")
+			return nil, ErrNotFound(model.CodeNotFound, "user not found")
 		}
 		return nil, ErrInternal(err)
 	}
@@ -58,7 +59,7 @@ func GetUserByUsername(db *sql.DB, username string) (*User, *AppError) {
 	err := row.Scan(&u.Id, &u.Username, &u.Password, &u.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound("NOT_FOUND", "user not found")
+			return nil, ErrNotFound(model.CodeNotFound, "user not found")
 		}
 		return nil, ErrInternal(err)
 	}
@@ -102,6 +103,24 @@ func UpdateUserPassword(db *sql.DB, id int, passwordHash string) *AppError {
 	return nil
 }
 
+func UpdateUser(db *sql.DB, id int, username, passwordHash string) *AppError {
+	res, err := db.Exec(
+		"UPDATE users SET username=$1, password_hash=$2 WHERE id=$3",
+		username, passwordHash, id,
+	)
+	if err != nil {
+		return mapPgError(err, "USER_ALREADY_EXISTS", "user already exists")
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return ErrInternal(err)
+	}
+	if affected == 0 {
+		return ErrNotFound(model.CodeNotFound, "user not found")
+	}
+	return nil
+}
+
 func DeleteUser(db *sql.DB, id int) *AppError {
 	res, err := db.Exec("DELETE FROM users WHERE id=$1", id)
 	if err != nil {
@@ -112,7 +131,7 @@ func DeleteUser(db *sql.DB, id int) *AppError {
 		return ErrInternal(err)
 	}
 	if affected == 0 {
-		return ErrNotFound("NOT_FOUND", "user not found")
+		return ErrNotFound(model.CodeNotFound, "user not found")
 	}
 	return nil
 }
@@ -123,7 +142,7 @@ func CreateDeck(db *sql.DB, userID int, name string) (*Deck, *AppError) {
 		"INSERT INTO decks (user_id, name) VALUES ($1, $2) RETURNING *", userID, name,
 	).Scan(&d.Id, &d.UserId, &d.Name, &d.CreatedAt, &d.UpdatedAt)
 	if err != nil {
-		return nil, mapPgError(err, "DECK_ALREADY_EXISTS", "deck already exists")
+		return nil, ErrConflict(model.CodeDeckAlreadyExists, "deck already exists")
 	}
 	return &d, nil
 }
@@ -136,7 +155,7 @@ func GetDeckByDeckName(db *sql.DB, userID int, name string) (*Deck, *AppError) {
 	err := row.Scan(&d.Id, &d.UserId, &d.Name, &d.CreatedAt, &d.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound("NOT_FOUND", "deck not found")
+			return nil, ErrNotFound(model.CodeNotFound, "deck not found")
 		}
 		return nil, ErrInternal(err)
 	}
@@ -151,7 +170,7 @@ func GetDeckByDeckId(db *sql.DB, userID int, id int) (*Deck, *AppError) {
 	err := row.Scan(&d.Id, &d.UserId, &d.Name, &d.CreatedAt, &d.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound("NOT_FOUND", "deck not found")
+			return nil, ErrNotFound(model.CodeNotFound, "deck not found")
 		}
 		return nil, ErrInternal(err)
 	}
@@ -189,14 +208,17 @@ func UpdateDeckName(db *sql.DB, userID, id int, name string) *AppError {
 		name, userID, id,
 	)
 	if err != nil {
-		return mapPgError(err, "DECK_ALREADY_EXISTS", "deck already exists")
+		if pgErr, ok := err.(*pq.Error); ok && pgErr.Code == "23505" {
+			return ErrConflict(model.CodeDeckAlreadyExists, "deck already exists")
+		}
+		return ErrInternal(err)
 	}
 	affected, err := res.RowsAffected()
 	if err != nil {
 		return ErrInternal(err)
 	}
 	if affected == 0 {
-		return ErrNotFound("NOT_FOUND", "deck not found")
+		return ErrNotFound(model.CodeNotFound, "deck not found")
 	}
 	return nil
 }
@@ -211,7 +233,7 @@ func DeleteDeck(db *sql.DB, userID, id int) *AppError {
 		return ErrInternal(err)
 	}
 	if affected == 0 {
-		return ErrNotFound("NOT_FOUND", "deck not found")
+		return ErrNotFound(model.CodeNotFound, "deck not found")
 	}
 	return nil
 }
@@ -222,7 +244,7 @@ func CreateCard(db *sql.DB, deckID int, front, back string, sourceText *string, 
 		deckID, front, back, sourceText, createdByAI,
 	)
 	if err != nil {
-		return mapPgError(err, "", "")
+		return ErrInternal(err)
 	}
 	return nil
 }
@@ -240,7 +262,7 @@ func GetCardByID(db *sql.DB, deckID, id int) (*Card, *AppError) {
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound("NOT_FOUND", "card not found")
+			return nil, ErrNotFound(model.CodeNotFound, "card not found")
 		}
 		return nil, ErrInternal(err)
 	}
@@ -295,7 +317,7 @@ func UpdateCard(db *sql.DB, deckID, id int, front, back string, sourceText *stri
 		return ErrInternal(err)
 	}
 	if affected == 0 {
-		return ErrNotFound("NOT_FOUND", "card not found")
+		return ErrNotFound(model.CodeNotFound, "card not found")
 	}
 	return nil
 }
@@ -310,7 +332,7 @@ func DeleteCard(db *sql.DB, deckID, id int) *AppError {
 		return ErrInternal(err)
 	}
 	if affected == 0 {
-		return ErrNotFound("NOT_FOUND", "card not found")
+		return ErrNotFound(model.CodeNotFound, "card not found")
 	}
 	return nil
 }
@@ -336,7 +358,7 @@ func GetCardSrs(db *sql.DB, cardID int) (*CardSrs, *AppError) {
 	err := row.Scan(&c.CardId, &c.Interval, &c.EaseFactor, &c.Repetitions, &c.NextReviewAt, &lastReviewAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound("NOT_FOUND", "card srs not found")
+			return nil, ErrNotFound(model.CodeNotFound, "card srs not found")
 		}
 		return nil, ErrInternal(err)
 	}
@@ -359,7 +381,7 @@ func UpdateCardSrs(db *sql.DB, cardID, interval, repetitions int, easeFactor flo
 		return ErrInternal(err)
 	}
 	if affected == 0 {
-		return ErrNotFound("NOT_FOUND", "card srs not found")
+		return ErrNotFound(model.CodeNotFound, "card srs not found")
 	}
 	return nil
 }
@@ -374,7 +396,7 @@ func DeleteCardSrs(db *sql.DB, cardID int) *AppError {
 		return ErrInternal(err)
 	}
 	if affected == 0 {
-		return ErrNotFound("NOT_FOUND", "card srs not found")
+		return ErrNotFound(model.CodeNotFound, "card srs not found")
 	}
 	return nil
 }

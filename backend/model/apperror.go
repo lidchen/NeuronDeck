@@ -12,13 +12,26 @@ package model
 */
 
 type AppError struct {
-	Code       string
+	Code       ErrorCode
 	Message    string
 	Err        error
 	HTTPStatus int
 }
 
-func ErrUnAuthorized(code, message string) *AppError {
+type ErrorCode string
+
+const (
+	CodeInvalidInput       ErrorCode = "INVALID_INPUT"
+	CodeUnauthorized       ErrorCode = "UNAUTHORIZED"
+	CodeInvalidCredentials ErrorCode = "INVALID_CREDENTIALS"
+	CodeForbidden          ErrorCode = "FORBIDDEN"
+	CodeNotFound           ErrorCode = "NOT_FOUND"
+	CodeUserAlreadyExists  ErrorCode = "USER_ALREADY_EXISTS"
+	CodeDeckAlreadyExists  ErrorCode = "DECK_ALREADY_EXISTS"
+	CodeInternal           ErrorCode = "INTERNAL_ERROR"
+)
+
+func ErrUnAuthorized(code ErrorCode, message string) *AppError {
 	return &AppError{
 		Code:       code,
 		Message:    message,
@@ -26,7 +39,7 @@ func ErrUnAuthorized(code, message string) *AppError {
 	}
 }
 
-func ErrConflict(code, message string) *AppError {
+func ErrConflict(code ErrorCode, message string) *AppError {
 	return &AppError{
 		Code:       code,
 		Message:    message,
@@ -34,7 +47,7 @@ func ErrConflict(code, message string) *AppError {
 	}
 }
 
-func ErrNotFound(code, message string) *AppError {
+func ErrNotFound(code ErrorCode, message string) *AppError {
 	return &AppError{
 		Code:       code,
 		Message:    message,
@@ -42,9 +55,9 @@ func ErrNotFound(code, message string) *AppError {
 	}
 }
 
-func ErrBadRequest(message string) *AppError {
+func ErrBadRequest(code ErrorCode, message string) *AppError {
 	return &AppError{
-		Code:       "INVALID_INPUT",
+		Code:       code,
 		Message:    message,
 		HTTPStatus: 400,
 	}
@@ -52,7 +65,7 @@ func ErrBadRequest(message string) *AppError {
 
 func ErrInternal(err error) *AppError {
 	return &AppError{
-		Code:       "INTERNAL_ERROR",
+		Code:       CodeInternal,
 		Message:    "internal server error: " + err.Error(),
 		Err:        err,
 		HTTPStatus: 500,
