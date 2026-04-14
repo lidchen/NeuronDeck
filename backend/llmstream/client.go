@@ -9,7 +9,37 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/lidchen/neuron_deck/backend/model"
 )
+
+// TODO:
+// specify language, max cards generated
+func GenerateCard(client *http.Client, message *[]Message) (*model.Card, error) {
+	var c *model.Card
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	payload, err := genStreamJsonPayload(message)
+	if err != nil {
+		return nil, err
+	}
+	chunks, err := streamChatCompletionChunks(ctx, client, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	var fullResponse strings.Builder
+	for chunk := range chunks {
+		if len(chunk.Choices) == 0 {
+			continue
+		}
+		fmt.Print(chunk.Choices[0].Delta.Content)
+		fullResponse.WriteString(chunk.Choices[0].Delta.Content)
+	}
+	fmt.Println()
+	return c, nil
+}
 
 func (c *ConversationManager) RunInteractiveChat(client *http.Client) {
 	for {
@@ -21,11 +51,18 @@ func (c *ConversationManager) RunInteractiveChat(client *http.Client) {
 		}
 
 		c.AddUser(input)
+
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		chunks, err := streamChatCompletionChunks(ctx, client, &c.History)
+		defer cancel()
+
+		payload, err := genStreamPayload(&c.History)
+		if err != nil {
+			log.Fatal("stream chat failed:", err)
+			return
+		}
+		chunks, err := streamChatCompletionChunks(ctx, client, payload)
 
 		if err != nil {
-			cancel()
 			log.Fatal("stream chat failed:", err)
 			return
 		}

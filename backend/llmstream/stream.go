@@ -12,12 +12,7 @@ import (
 	"strings"
 )
 
-func streamChatCompletionChunks(ctx context.Context, client *http.Client, message *[]Message) (<-chan ChunkResponse, error) {
-	payload, err := genStreamPayload(*message)
-	if err != nil {
-		return nil, err
-	}
-
+func streamChatCompletionChunks(ctx context.Context, client *http.Client, payload *strings.Reader) (<-chan ChunkResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, os.Getenv("URL"), payload)
 	if err != nil {
 		return nil, err
@@ -84,7 +79,7 @@ func scanChunkStream(ctx context.Context, resp *http.Response, out chan<- ChunkR
 	return scanner.Err()
 }
 
-func genStreamPayload(m []Message) (*strings.Reader, error) {
+func genStreamPayload(m *[]Message) (*strings.Reader, error) {
 	messagesJson, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
@@ -111,5 +106,35 @@ func genStreamPayload(m []Message) (*strings.Reader, error) {
 		"logprobs": false,
 		"top_logprobs": null
 	}`, string(messagesJson)))
+	return payload, nil
+}
+
+func genStreamJsonPayload(m *[]Message) (*strings.Reader, error) {
+	messageJson, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	payload := strings.NewReader(fmt.Sprintf(`{
+		"messages": %s,
+		"model": "deepseek-chat",
+		"thinking": {
+			"type": "disabled"
+		},
+		"frequency_penalty": 0,
+		"max_tokens": 2048,
+		"presence_penalty": 0,
+		"response_format": {
+			"type": "json_object"
+		},
+		"stop": null,
+		"stream": true,
+		"stream_options": null,
+		"temperature": 1,
+		"top_p": 1,
+		"tools": null,
+		"tool_choice": "none",
+		"logprobs": false,
+		"top_logprobs": null
+	}`, string(messageJson)))
 	return payload, nil
 }
