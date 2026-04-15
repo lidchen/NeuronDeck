@@ -10,13 +10,44 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/lidchen/neuron_deck/backend/model"
 )
+
+func GenerateCard(content *string) (*CardResponse, *model.AppError) {
+	prompt := `
+You are a spaced repetition flashcard generator. 
+Given source text, extract the most important concepts and generate flashcards. 
+Rules: 
+- Front: a clear, specific question or cloze prompt 
+- Back: concise answer (1-3 sentences max) 
+- Prefer atomic cards (one fact per card) 
+- Output ONLY valid JSON, no markdown fences. 
+Output format:{\"cards\": [{\"front\": \"...\", \"back\": \"...\"}]}
+`
+	c := &http.Client{}
+	m := []Message{
+		{
+			Role:    "system",
+			Content: prompt,
+		},
+		{
+			Role:    "user",
+			Content: *content,
+		},
+	}
+	cardResponse, err := generateCard(c, &m)
+	if err != nil {
+		return nil, model.ErrInternal(err)
+	}
+	return cardResponse, nil
+}
 
 // TODO:
 // specify language
 // specify max cards generated
 // custom parser, parse each card once finished
-func GenerateCard(client *http.Client, message *[]Message) (*CardResponse, error) {
+func generateCard(client *http.Client, message *[]Message) (*CardResponse, error) {
 	var c CardResponse
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
