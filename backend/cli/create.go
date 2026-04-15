@@ -35,7 +35,7 @@ func (a *CliApp) handleCreateCard(args []string) {
 		back = args[1]
 	}
 
-	err := db.CreateCard(a.db, a.deck.Id, front, back, nil, false)
+	err := db.CreateCard(a.db, a.deck.Id, &front, &back, nil, false)
 	if err != nil {
 		log.Fatal(err)
 		return

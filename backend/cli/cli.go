@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"database/sql"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -13,14 +14,16 @@ import (
 )
 
 type CliApp struct {
-	db   *sql.DB
-	deck *model.Deck
-	user *model.User
-	srs  *srs.SRSService
+	db     *sql.DB
+	deck   *model.Deck
+	user   *model.User
+	srs    *srs.SRSService
+	client *http.Client
 }
 
 func NewCliApp(database *sql.DB) (*CliApp, *model.AppError) {
 	var c CliApp = CliApp{}
+	c.client = &http.Client{}
 	c.db = database
 	c.srs = srs.NewSRSService(&srs.RealClock{})
 	debugAutoLogin := os.Getenv("DEBUG_AUTO_LOGIN")
@@ -51,7 +54,7 @@ func NewCliApp(database *sql.DB) (*CliApp, *model.AppError) {
 }
 
 func RunCliApp(a *CliApp) {
-	fmt.Println("🃏 Flashcard CLI — type \"help\" or \"exit\"")
+	printWithWrap("🃏 Flashcard CLI — type \"help\" or \"exit\"")
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
@@ -73,8 +76,8 @@ func printWithWrap(s string) {
 }
 
 func printHelp() {
-	fmt.Printf("Commands:\n%s\n%s\n%s\n%s\n%s\n",
-		create_usage, show_usage, update_usage, delete_usage, other_usage)
+	fmt.Printf("Commands:\n%s\n%s\n%s\n%s\n%s\n%s\n",
+		llm_usage, create_usage, show_usage, update_usage, delete_usage, other_usage)
 }
 
 func readLineWithPrompt(s string) string {

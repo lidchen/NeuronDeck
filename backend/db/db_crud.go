@@ -238,7 +238,7 @@ func DeleteDeck(db *sql.DB, userID, id int) *AppError {
 	return nil
 }
 
-func CreateCard(db *sql.DB, deckID int, front, back string, sourceText *string, createdByAI bool) *AppError {
+func CreateCard(db *sql.DB, deckID int, front, back *string, sourceText *string, createdByAI bool) *AppError {
 	_, err := db.Exec(
 		"INSERT INTO cards (deck_id, front, back, source_text, created_by_ai) VALUES ($1, $2, $3, $4, $5)",
 		deckID, front, back, sourceText, createdByAI,

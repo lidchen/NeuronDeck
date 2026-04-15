@@ -22,6 +22,8 @@ func (a *CliApp) dispatch(input string) {
 	cmd, args := tokens[0], tokens[1:]
 
 	switch cmd {
+	case "llm":
+		a.handleLLM(args)
 	case "create":
 		a.handleCreate(args)
 	case "show":

@@ -14,7 +14,7 @@ import (
 	"github.com/lidchen/neuron_deck/backend/model"
 )
 
-func GenerateCard(content *string) (*CardResponse, *model.AppError) {
+func GenerateCard(c *http.Client, content *string) (*CardResponse, *model.AppError) {
 	prompt := `
 You are a spaced repetition flashcard generator. 
 Given source text, extract the most important concepts and generate flashcards. 
@@ -25,7 +25,6 @@ Rules:
 - Output ONLY valid JSON, no markdown fences. 
 Output format:{\"cards\": [{\"front\": \"...\", \"back\": \"...\"}]}
 `
-	c := &http.Client{}
 	m := []Message{
 		{
 			Role:    "system",

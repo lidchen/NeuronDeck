@@ -1,5 +1,9 @@
 package cli
 
+var llm_usage string = `
+llm gencard <source_text>    Generate card using llm
+`
+
 var create_usage string = ` 
 create card <front> <back>   Create a new flashcard
 create deck <name>           Create a new deck
