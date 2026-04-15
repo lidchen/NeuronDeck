@@ -14,7 +14,7 @@ import (
 	"github.com/lidchen/neuron_deck/backend/model"
 )
 
-var requiredEnvKeys = []string{"DEEPSEEK_API_KEY", "DB_DSN", "URL", "DEBUG_MODE"}
+var requiredEnvKeys = []string{"DEEPSEEK_API_KEY", "DB_DSN", "URL"}
 
 func main() {
 	initEnv()

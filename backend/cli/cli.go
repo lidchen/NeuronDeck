@@ -26,29 +26,32 @@ func NewCliApp(database *sql.DB) (*CliApp, *model.AppError) {
 	c.client = &http.Client{}
 	c.db = database
 	c.srs = srs.NewSRSService(&srs.RealClock{})
-	debugAutoLogin := os.Getenv("DEBUG_AUTO_LOGIN")
-	debugUsername := os.Getenv("DEBUG_USERNAME")
-	debugPassword := os.Getenv("DEBUG_PASSWORD")
-	debugDeckname := os.Getenv("DEBUG_DECKNAME")
+	if os.Getenv("DEBUG_MODE") == "1" {
+		debugAutoLogin := os.Getenv("DEBUG_AUTO_LOGIN")
+		debugUsername := os.Getenv("DEBUG_USERNAME")
+		debugPassword := os.Getenv("DEBUG_PASSWORD")
+		debugDeckname := os.Getenv("DEBUG_DECKNAME")
 
-	if debugAutoLogin == "1" {
-		if debugUsername != "" && debugPassword != "" {
-			u, success, err := db.Login(database, debugUsername, debugPassword)
-			if err != nil {
-				return nil, err
+		if debugAutoLogin == "1" {
+			if debugUsername != "" && debugPassword != "" {
+				u, success, err := db.Login(database, debugUsername, debugPassword)
+				if err != nil {
+					return nil, err
+				}
+				if !success {
+					return nil, model.ErrNotFound(model.CodeNotFound, "auto login not success")
+				}
+				c.user = u
 			}
-			if !success {
-				return nil, model.ErrNotFound(model.CodeNotFound, "auto login not success")
+			if debugDeckname != "" {
+				d, err := db.GetDeckByDeckName(database, c.user.Id, debugDeckname)
+				if err != nil {
+					return nil, err
+				}
+				c.deck = d
 			}
-			c.user = u
 		}
-		if debugDeckname != "" {
-			d, err := db.GetDeckByDeckName(database, c.user.Id, debugDeckname)
-			if err != nil {
-				return nil, err
-			}
-			c.deck = d
-		}
+
 	}
 	return &c, nil
 }
