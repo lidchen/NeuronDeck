@@ -15,9 +15,35 @@ import (
 var learning_steps = []float32{0, 0.1667, 1.0}
 var graduating_interval float32 = 24.0
 
-func Review(c *model.CardSrs, q int) *model.AppError {
-	var now time.Time = time.Now()
+type Clock interface {
+	Now() time.Time
+}
 
+type RealClock struct{}
+
+func (r *RealClock) Now() time.Time { return time.Now() }
+
+type MockClock struct {
+	current time.Time
+}
+
+func (m *MockClock) Now() time.Time { return m.current }
+func (m *MockClock) Advance(hours float64) {
+	m.current = m.current.Add(
+		time.Duration(hours * float64(time.Hour)),
+	)
+}
+
+type SRSService struct {
+	clock Clock
+}
+
+func NewSRSService(clock Clock) *SRSService {
+	return &SRSService{clock: clock}
+}
+
+func (s *SRSService) Review(c *model.CardSrs, q int) *model.AppError {
+	now := s.clock.Now()
 	if c.Repetitions == 0 {
 		// LEARNING PAHSE
 		if err := learningPhase(q, c); err != nil {
