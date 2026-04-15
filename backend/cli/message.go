@@ -8,6 +8,7 @@ create user <name>           Set the current user
 
 var show_usage string = `
 show cards                   List all cards
+show srs                     List all card srs
 show decks                   List all decks
 show user                    Show current user
 `

@@ -8,7 +8,6 @@ import (
 
 	"github.com/lidchen/neuron_deck/backend/db"
 	"github.com/lidchen/neuron_deck/backend/model"
-	"github.com/lidchen/neuron_deck/backend/srs"
 )
 
 func (a *CliApp) handleReview(args []string) {
@@ -57,7 +56,7 @@ func reviewNextCard(a *CliApp) (done bool, apperr *model.AppError) {
 	if err != nil {
 		return true, err
 	}
-	err = srs.Review(cSrs, *q)
+	err = a.srs.Review(cSrs, *q)
 	if err != nil {
 		return true, err
 	}

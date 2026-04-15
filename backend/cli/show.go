@@ -23,6 +23,22 @@ func (a *CliApp) handleShowCards(args []string) {
 	}
 }
 
+func (a *CliApp) handleShowCardSrs(args []string) {
+	// default print all card with srs
+	if a.deck == nil {
+		fmt.Println("No deck is opened, please open a deck first")
+		return
+	}
+	cSrs, err := db.GetAllSrs(a.db, a.deck.Id)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	for _, c := range *cSrs {
+		fmt.Println(c)
+	}
+}
+
 func (a *CliApp) handleShowDecks(args []string) {
 	if a.user == nil {
 		fmt.Println(ErrNoLogin.Error())
@@ -62,6 +78,8 @@ func (a *CliApp) handleShow(args []string) {
 	switch target {
 	case "card", "cards":
 		a.handleShowCards(args[1:])
+	case "srs":
+		a.handleShowCardSrs(args[1:])
 	case "deck", "decks":
 		a.handleShowDecks(args[1:])
 	case "user", "users":

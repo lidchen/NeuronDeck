@@ -368,6 +368,31 @@ func GetCardSrs(db *sql.DB, cardID int) (*CardSrs, *AppError) {
 	return &c, nil
 }
 
+func GetAllSrs(db *sql.DB, deckId int) (*[]CardSrs, *AppError) {
+
+	rows, err := db.Query("SELECT * FROM card_srs ORDER BY next_review_at")
+	if err != nil {
+		return nil, ErrInternal(err)
+	}
+	defer rows.Close()
+
+	cSrs := []CardSrs{}
+	for rows.Next() {
+		var c CardSrs
+		err := rows.Scan(
+			&c.CardId, &c.Interval, &c.EaseFactor, &c.Repetitions, &c.NextReviewAt, &c.LastReviewAt,
+		)
+		if err != nil {
+			return nil, ErrInternal(err)
+		}
+		cSrs = append(cSrs, c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, ErrInternal(err)
+	}
+	return &cSrs, nil
+}
+
 func UpdateCardSrs(db *sql.DB, cSrs *CardSrs) *AppError {
 	res, err := db.Exec(
 		"UPDATE card_srs SET interval=$1, ease_factor=$2, repetitions=$3, next_review_at=$4, last_reviewed_at=$5 WHERE card_id=$6",
