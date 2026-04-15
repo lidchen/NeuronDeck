@@ -11,6 +11,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/lidchen/neuron_deck/backend/cli"
 	"github.com/lidchen/neuron_deck/backend/llmstream"
+	"github.com/lidchen/neuron_deck/backend/model"
 )
 
 var requiredEnvKeys = []string{"DEEPSEEK_API_KEY", "DB_DSN", "URL", "DEBUG_MODE"}
@@ -34,7 +35,11 @@ func RunCliApp() {
 		log.Fatalf("ping db: %v", err)
 		return
 	}
-	cliapp := cli.NewCliApp(db)
+	var apperr *model.AppError
+	cliapp, apperr := cli.NewCliApp(db)
+	if apperr != nil {
+		log.Fatalf("error at create cliapp: %s", apperr.Message)
+	}
 	cli.RunCliApp(cliapp)
 }
 
