@@ -26,18 +26,13 @@ func (a *CliApp) handleLogin(args []string) {
 		password = args[1]
 	}
 
-	valid_user, err := db.GetUserByUsername(a.db, username)
+	valid_user, success, err := db.Login(a.db, username, password)
 	if err != nil {
-		if err.Code == "NOT_FOUND" {
-			fmt.Println("User not exist")
-			return
-		}
-		log.Fatal(err)
+		log.Fatal(err.Message)
 		return
 	}
-	if valid_user.Password != password {
-		fmt.Println("password mismatch")
-		return
+	if !success {
+		fmt.Println("password or username incorrect")
 	}
 	a.user = valid_user
 }
