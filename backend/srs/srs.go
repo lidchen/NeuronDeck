@@ -24,12 +24,12 @@ type RealClock struct{}
 func (r *RealClock) Now() time.Time { return time.Now() }
 
 type MockClock struct {
-	current time.Time
+	Current time.Time
 }
 
-func (m *MockClock) Now() time.Time { return m.current }
+func (m *MockClock) Now() time.Time { return m.Current }
 func (m *MockClock) Advance(hours float64) {
-	m.current = m.current.Add(
+	m.Current = m.Current.Add(
 		time.Duration(hours * float64(time.Hour)),
 	)
 }
@@ -72,18 +72,14 @@ func learningPhase(q int, c *model.CardSrs) *model.AppError {
 	case 3, 4, 5:
 		{
 			// Pass: advance to next learning step
-			if n := getNextStep(c.Interval, learning_steps); n != nil {
-				if *n == -1.0 {
-					// Not found
-					return model.ErrInternal(fmt.Errorf("current interval: %f is not found in learning step", c.Interval))
-				}
+			if n := getNextStep(c.Interval, learning_steps); n == nil {
 				// Finish learning step, upgrade to graduating_interval
 				c.Interval = graduating_interval
 				c.Repetitions += 1
 				c.EaseFactor = calEaseFactorUp(c.EaseFactor, q)
 			} else {
-				// Upgrade to review phase
-				c.Interval = graduating_interval
+				// Upgrade phase
+				c.Interval = *n
 			}
 		}
 	default:
@@ -125,20 +121,27 @@ func calEaseFactorDown(current float32) float32 {
 }
 
 func getNextStep(current float32, steps []float32) *float32 {
-	// assume current could be found in steps
-	length := len(steps)
-	for i, s := range steps {
-		if current == s {
-			i++
-			if i > length {
-				return nil
-			} else {
-				return &steps[i]
-			}
+	// Find the closest step to current, then advance one step.
+	if len(steps) == 0 {
+		return nil
+	}
+
+	closestIdx := 0
+	minDiff := float32(math.Abs(float64(current - steps[0])))
+	for i := 1; i < len(steps); i++ {
+		diff := float32(math.Abs(float64(current - steps[i])))
+		if diff < minDiff {
+			minDiff = diff
+			closestIdx = i
 		}
 	}
-	v := float32(-1)
-	return &v
+
+	nextIdx := closestIdx + 1
+	if nextIdx >= len(steps) {
+		return nil
+	}
+
+	return &steps[nextIdx]
 }
 
 func addHours(t time.Time, hour float32) time.Time {

@@ -22,16 +22,12 @@ type CliApp struct {
 func NewCliApp(database *sql.DB) (*CliApp, *model.AppError) {
 	var c CliApp = CliApp{}
 	c.db = database
+	c.srs = srs.NewSRSService(&srs.RealClock{})
 	debugAutoLogin := os.Getenv("DEBUG_AUTO_LOGIN")
 	debugUsername := os.Getenv("DEBUG_USERNAME")
 	debugPassword := os.Getenv("DEBUG_PASSWORD")
 	debugDeckname := os.Getenv("DEBUG_DECKNAME")
-	debugSrs := os.Getenv("DEBUG_SRS")
-	if debugSrs == "1" {
-		c.srs = srs.NewSRSService(&srs.MockClock{})
-	} else {
-		c.srs = srs.NewSRSService(&srs.RealClock{})
-	}
+
 	if debugAutoLogin == "1" {
 		if debugUsername != "" && debugPassword != "" {
 			u, success, err := db.Login(database, debugUsername, debugPassword)
